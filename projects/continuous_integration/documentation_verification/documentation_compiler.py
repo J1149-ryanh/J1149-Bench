@@ -16,6 +16,22 @@ def find_documetation(dirpath, doc_ext):
                 yield os.path.join(root, fname)
 
 
+def is_valid_first_char(transition_state, char):
+    if transition_state.is_term_pattern:
+        return True
+    return transition_state.pattern.startswith(char)
+
+
+
+class IsValidExitStatus:
+
+    def __init__(self, requisite_status):
+        self.requisite_status = requisite_status
+
+    def __call__(self, status):
+        return self.requisite_status == status
+
+
 class TransitionStateNotFound(Exception):
 
     def __init__(self, msg, errors=[]):
@@ -146,20 +162,21 @@ class LexerState(abc.ABC):
         self.lexer = lexer
         self.pattern = pattern
         self.is_term_pattern = is_term_pattern
-        self.token_idx = 0
-        self.transition_states = transition_states
-        self.accum = []
-        self.is_success = False
+        self.transition_map = transition_states
+        self.reset()
 
     def __str__(self):
         return self.__class__.__name__
 
+    def reset(self):
+        self.token_idx = 0
+        self.accum = []
+        self.is_success = False
+
     def next_char(self, char):
 
-        if self.__class__.__name__ == 'MdInputHeaderState':
-            print('DEBUG!')
         if self.is_success or len(self.pattern) < 1:
-            self.change_state(char)
+            self.change_state(char, self.is_success)
         # If we've matched the whole token:
         #   1. Indicate to the lexer that this state completed successfully.
         #   2. Change the state based on the dangling char we just received.
@@ -178,30 +195,28 @@ class LexerState(abc.ABC):
         # We are no longer matching the token sequence; change to the appropriate
         # state.
         else:
-            self.token_idx = 0
-            self.change_state(char)
+            self.change_state(char, self.is_success)
 
-    def change_state(self, char):
-        if len(self.transition_states) < 1:
+    def change_state(self, char, status):
+        if self.__class__.__name__ == 'MdExpectedOutputState':
+            print('DEBUG')
+        self.reset()
+        if len(self.transition_map) < 1:
             raise ValueError('There must be transition states available to this'
                              ' state {0}.'.format(self))
         # Notice that the transition_states are dependent on order!
-        for transition_state in self.transition_states:
-
-            if transition_state.is_valid_first_char(char):
+        for transition_state, condition_met in self.transition_map.items():
+            if condition_met(transition_state, char, status):
                 self.lexer.set_state(transition_state)
                 self.lexer.next_char(char)
                 return SUCCESS
         else:
             msg = "{0} can't find a state transition to with the following" \
-                  " available states {1}.".format(self, self.transition_states)
+                  " available states {1}.".format(self, self.transition_map)
             raise TransitionStateNotFound(msg)
 
-    def is_valid_first_char(self, char):
-        return self.pattern.startswith(char)
-
     def set_transition_states(self, transition_states):
-        self.transition_states = transition_states
+        self.transition_map = transition_states
 
     @abc.abstractmethod
     def on_state_success(self):
@@ -214,10 +229,10 @@ def monkey_patch_change_state(cls):
 
     cls._change_state = cls.change_state
 
-    def change_state(self, char):
+    def change_state(self, char, status):
         # We don't care if it can't find a state.
         try:
-            return cls._change_state(self, char)
+            return cls._change_state(self, char, status)
         except TransitionStateNotFound:
             pass
         return SUCCESS
@@ -228,20 +243,17 @@ def monkey_patch_change_state(cls):
 @monkey_patch_change_state
 class NullState(LexerState):
 
-    def __init__(self, lexer, transition_states=[], is_term_pattern=False):
+    def __init__(self, lexer, transition_states=[]):
         # Note, '' is the empty string and matches just about every string
         # matching function.
         pattern = ''
         super(NullState, self).__init__(lexer, pattern, transition_states,
-                                        is_term_pattern)
+                                        is_term_pattern=True)
 
     @overrides
     def on_state_success(self):
         pass
 
-    @overrides
-    def is_valid_first_char(self, char):
-        return True
 
 class InputHeaderState(LexerState):
 
@@ -261,9 +273,6 @@ class InputCmdState(LexerState):
         token = Token(seq_idx, value)
         self.lexer.token_sequence.append(token)
 
-    @overrides
-    def is_valid_first_char(self, char):
-        return True
 
 class OutputHeaderState(LexerState):
 
@@ -283,9 +292,6 @@ class ExpectedOutputState(LexerState):
         token = Token(seq_idx, value)
         self.lexer.token_sequence.append(token)
 
-    @overrides
-    def is_valid_first_char(self, char):
-        return True
 
 if __name__ == '__main__':
     pass

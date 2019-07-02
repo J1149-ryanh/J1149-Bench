@@ -25,9 +25,16 @@ class MdInputHeaderState(dc.InputHeaderState):
 class MdInputCmdState(dc.InputCmdState):
 
     def __init__(self, lexer):
-        pattern = "`"
+        pattern = "\n"
         super(MdInputCmdState, self).__init__(lexer, pattern,
-                                                 is_term_pattern=True)
+                                              is_term_pattern=True)
+
+
+class MdExitHeaderState(dc.InputHeaderState):
+
+    def __init__(self, lexer):
+        pattern = "```\n"
+        super(MdExitHeaderState, self).__init__(lexer, pattern)
 
 
 class MdOutputHeaderState(dc.OutputHeaderState):
@@ -42,10 +49,21 @@ class MdExpectedOutputState(dc.ExpectedOutputState):
     def __init__(self, lexer):
         pattern = "`"
         super(MdExpectedOutputState, self).__init__(lexer, pattern,
-                                                 is_term_pattern=True)
+                                                    is_term_pattern=True)
 
 
+successful_exit_status = dc.IsValidExitStatus(requisite_status=True)
+failed_exit_status = dc.IsValidExitStatus(requisite_status=False)
 
+
+def successful_match(transition_state, char, status):
+    valid_first_char = dc.is_valid_first_char(transition_state, char)
+    return successful_exit_status(status) and valid_first_char
+
+
+def failed_match(transition_state, char, status):
+    valid_first_char = dc.is_valid_first_char(transition_state, char)
+    return failed_exit_status(status) and valid_first_char
 
 
 class MarkdownLexer(dc.Lexer):
@@ -58,19 +76,28 @@ class MarkdownLexer(dc.Lexer):
         null_intro = dc.NullState(self)
         input_header = MdInputHeaderState(self)
         input_cmd = MdInputCmdState(self)
+        input_exit_header = MdExitHeaderState(self)
         null_wait_output = dc.NullState(self)
         output_header = MdOutputHeaderState(self)
         expected_output = MdExpectedOutputState(self)
 
-        null_intro.set_transition_states([input_header])
+        null_intro.set_transition_states({input_header: failed_match})
 
-        input_header.set_transition_states([input_cmd, null_intro])
-        input_cmd.set_transition_states([output_header, null_wait_output])
+        input_header.set_transition_states({input_cmd: successful_match,
+                                            null_intro: failed_match})
 
-        null_wait_output.set_transition_states([output_header])
-        output_header.set_transition_states([expected_output, null_intro])
-        expected_output.set_transition_states([input_header, null_intro])
+        input_cmd.set_transition_states({input_exit_header: successful_match})
+
+        input_exit_header.set_transition_states({null_wait_output:
+                                                     successful_match})
+
+        null_wait_output.set_transition_states({output_header: failed_match})
+        output_header.set_transition_states({expected_output: successful_match,
+                                             null_intro: failed_match})
+        expected_output.set_transition_states({input_header: successful_match,
+                                               null_intro: successful_match})
         return null_intro
+
 
 class MarkdownParser:
 
