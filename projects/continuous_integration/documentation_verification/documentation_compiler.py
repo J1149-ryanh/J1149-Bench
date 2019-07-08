@@ -48,6 +48,7 @@ class TokenIdentifiers(Enum):
         if self.__class__ == other.__class__:
             return self.value < other.value
 
+
 Token = collections.namedtuple('Token', 'seq_idx value')
 
 
@@ -58,16 +59,13 @@ class TokenSequence:
     if the command set is filled.
     '''
 
-    def __init__(self, default_environment=None):
+    def __init__(self, default_environment=None, fname=None):
         self.default_environment = default_environment
-        self.sequence_storage = []
-        # first command set
-        first_cmd_set = []
-        if self.default_environment is not None:
-            token = Token(seq_idx=TokenIdentifiers.ENVIRONMENT,
-                          value=default_environment)
-            first_cmd_set.append(token)
-        self.sequence_storage.append(first_cmd_set)
+        self.init()
+
+    def __iter__(self):
+        for cmd_set in self.sequence_storage:
+            yield cmd_set
 
     def __str__(self):
         string_sequence = ''
@@ -76,6 +74,21 @@ class TokenSequence:
                 subsequence = '{0}:{1}\n'.format(token.seq_idx, token.value)
                 string_sequence += subsequence
         return string_sequence
+
+    def init(self):
+        self.sequence_storage = []
+        # first command set
+        first_cmd_set = []
+        if self.default_environment is not None:
+            token = Token(seq_idx=TokenIdentifiers.ENVIRONMENT,
+                          value=self.default_environment)
+            first_cmd_set.append(token)
+        self.sequence_storage.append(first_cmd_set)
+
+    def is_complete(self):
+        last_cmd_set = self.sequence_storage[-1]
+        last_el = last_cmd_set[-1]
+        return last_el.seq_idx == TokenIdentifiers.EXPECTED_OUT
 
     def append(self, token):
         self.verify_sequence(token)
@@ -115,21 +128,30 @@ class Lexer:
 
     def __init__(self, root_state, default_environment=None):
         self.state = root_state
-        self.token_sequence = TokenSequence(default_environment)
+        self.default_environment = default_environment
+        self.token_sequence = TokenSequence(self.default_environment)
 
     def lex(self, filepath):
         with open(filepath, 'r') as fyle:
             for line in fyle:
                 for char in line:
-                    print(char, end='')
+                    #print(char, end='')
                     self.next_char(char)
 
     def next_char(self, char):
         self.state.next_char(char)
 
     def set_state(self, transition_state):
-        print('Changing state to %s'%str(transition_state))
+        #print('Changing state to %s'%str(transition_state))
         self.state = transition_state
+
+    def pop_tok_seq(self):
+        if not self.token_sequence.is_complete():
+            raise ValueError("Token Sequence did not"
+                             " complete %s" % self.token_sequence)
+        tmp = self.token_sequence
+        self.token_sequence = TokenSequence(self.default_environment)
+        return tmp
 
 
 class LexerState(abc.ABC):

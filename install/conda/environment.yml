@@ -1,0 +1,43 @@
+name: J1149-Bench
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1=main
+  - appdirs=1.4.3=py_1
+  - asn1crypto=0.24.0=py37_1003
+  - ca-certificates=2019.6.16=hecc5488_0
+  - certifi=2019.6.16=py37_0
+  - cffi=1.12.3=py37h8022711_0
+  - chardet=3.0.4=py37_1003
+  - cryptography=2.7=py37h72c5cf5_0
+  - docker-py=4.0.2=py37_0
+  - docker-pycreds=0.4.0=py_0
+  - idna=2.8=py37_1000
+  - libedit=3.1.20181209=hc058e9b_0
+  - libffi=3.2.1=hd88cf55_4
+  - libgcc-ng=9.1.0=hdf63c60_0
+  - libstdcxx-ng=9.1.0=hdf63c60_0
+  - ncurses=6.1=he6710b0_1
+  - openssl=1.1.1b=h14c3975_1
+  - overrides=1.9=py_0
+  - packaging=19.0=py_0
+  - pip=19.1.1=py37_0
+  - pycparser=2.19=py37_1
+  - pyopenssl=19.0.0=py37_0
+  - pyparsing=2.4.0=py_0
+  - pysocks=1.7.0=py37_0
+  - python=3.7.3=h0371630_0
+  - readline=7.0=h7b6447c_5
+  - requests=2.22.0=py37_0
+  - setuptools=41.0.1=py37_0
+  - six=1.12.0=py37_1000
+  - sqlite=3.28.0=h7b6447c_0
+  - tk=8.6.8=hbc83047_0
+  - urllib3=1.24.3=py37_0
+  - websocket-client=0.56.0=py37_0
+  - wheel=0.33.4=py37_0
+  - xz=5.2.4=h14c3975_4
+  - zlib=1.2.11=h7b6447c_3
+prefix: /home/rxhernandez/anaconda3/envs/J1149-Bench
+

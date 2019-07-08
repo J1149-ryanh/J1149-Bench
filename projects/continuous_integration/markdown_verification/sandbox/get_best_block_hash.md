@@ -26,12 +26,12 @@ The `getbestblockhash` RPC returns the header hash of the most recent block on t
 
 Input:
 ```
-paicoin-cli -testnet getbestblockhash
+paicoin-cli -regtest getbestblockhash
 ```
 
 Result:
 ```
-0000000000075c58ed39c3e50f99b32183d090aefa0cf8c324a82eea9b01a887
+00000000018151b673df2356e5e25bfcfecbcd7cf888717f2458530461512343
 ```
 
 *See also*

@@ -1,9 +1,10 @@
 from projects.continuous_integration.documentation_verification import documentation_compiler as dc
 
+import os
 import sys
 
 if sys.platform.startswith('linux'):
-    DEFAULT_ENVIRONMENT = 'paicoind -regtest &'
+    DEFAULT_ENVIRONMENT = "paicoind -regtest"
 elif sys.platform.startswith('win'):
     DEFAULT_ENVIRONMENT = 'start /B paicoind -regtest &'
 else:
@@ -113,19 +114,20 @@ class MarkdownSemanticAnalyzer:
 
 class MarkdownCompiler:
 
+
     def compile(self, dirpath):
         mkdn_lexer = MarkdownLexer()
-        mkdn_parser = MarkdownParser()
-        mkdn_analyzer = MarkdownSemanticAnalyzer()
+        tokens = []
 
         for mkdn_filepath in find_markdown(dirpath):
             mkdn_lexer.lex(mkdn_filepath)
-            print(mkdn_lexer.token_sequence)
-            mkdn_parser.parse(mkdn_filepath)
-            mkdn_analyzer.analyze(mkdn_filepath)
+            tokens.append(mkdn_lexer.token_sequence)
+            yield mkdn_filepath, mkdn_lexer.pop_tok_seq()
 
 
 if __name__ == '__main__':
     md_compiler = MarkdownCompiler()
-    md_compiler.compile('.')
+    for filepath, token_sequence in md_compiler.compile('.'):
+        print(filepath)
+        print(token_sequence)
 
