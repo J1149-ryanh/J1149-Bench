@@ -8,11 +8,41 @@ import os
 # Unix style success; used for syntactic sugar at the moment.
 SUCCESS = 0
 
+# Stuff to ignore
+# TODO enable this to be modified by the user, a la .gitignore
+IGNORE = ['.pytest_cache', 'README.md', 'CODE_OF_CONDUCT.md',
+          '_configuration']
+
+
+class DocCompilerError(Exception):
+    """"Base exception for documentation compiler"""
+    pass
+
+
+class IncompleteCmdSeq(DocCompilerError):
+    """There was not a complete sequence of commands"""
+    pass
+
+
+class TransitionStateNotFound(DocCompilerError):
+    """No transition state was found that matched the conditions in the adjacent
+        transition states"""
+    def __init__(self, msg, errors=[]):
+        super(TransitionStateNotFound, self).__init__(msg, errors)
+
+
+def should_ignore(root, fname):
+    path = os.path.join(root, fname)
+    for ig in IGNORE:
+        if ig in path:
+            return True
+    return False
+
 
 def find_documetation(dirpath, doc_ext):
     for root, _, fnames in os.walk(dirpath):
         for fname in fnames:
-            if fname.endswith(doc_ext):
+            if fname.endswith(doc_ext) and not should_ignore(root, fname):
                 yield os.path.join(root, fname)
 
 
@@ -20,7 +50,6 @@ def is_valid_first_char(transition_state, char):
     if transition_state.is_term_pattern:
         return True
     return transition_state.pattern.startswith(char)
-
 
 
 class IsValidExitStatus:
@@ -32,10 +61,6 @@ class IsValidExitStatus:
         return self.requisite_status == status
 
 
-class TransitionStateNotFound(Exception):
-
-    def __init__(self, msg, errors=[]):
-        super(TransitionStateNotFound, self).__init__(msg, errors)
 
 @unique
 @total_ordering
@@ -130,25 +155,26 @@ class Lexer:
         self.state = root_state
         self.default_environment = default_environment
         self.token_sequence = TokenSequence(self.default_environment)
+        self.filepath = None
 
     def lex(self, filepath):
+        self.filepath = filepath
         with open(filepath, 'r') as fyle:
             for line in fyle:
                 for char in line:
-                    #print(char, end='')
                     self.next_char(char)
 
     def next_char(self, char):
         self.state.next_char(char)
 
     def set_state(self, transition_state):
-        #print('Changing state to %s'%str(transition_state))
         self.state = transition_state
 
     def pop_tok_seq(self):
         if not self.token_sequence.is_complete():
-            raise ValueError("Token Sequence did not"
-                             " complete %s" % self.token_sequence)
+            raise IncompleteCmdSeq("Token Sequence did not"
+                                   " complete %s for file %s"
+                                   % (self.token_sequence, self.filepath))
         tmp = self.token_sequence
         self.token_sequence = TokenSequence(self.default_environment)
         return tmp
@@ -220,8 +246,6 @@ class LexerState(abc.ABC):
             self.change_state(char, self.is_success)
 
     def change_state(self, char, status):
-        if self.__class__.__name__ == 'MdExpectedOutputState':
-            print('DEBUG')
         self.reset()
         if len(self.transition_map) < 1:
             raise ValueError('There must be transition states available to this'

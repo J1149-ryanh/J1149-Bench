@@ -13,7 +13,6 @@ def run_cmd(image, cmd, env=''):
     for env_cmd in env_cmds[1:]:
         docker.exec_run(env_cmd)
     cmd = sanitize(cmd)
-    print('Running cmd %s'%cmd, flush=True)
     res = container.exec_run(cmd)
     bytes_output = res.output
     # convert from bytes literal to string
@@ -38,7 +37,7 @@ def sanitize(cmd):
 
 if __name__ == '__main__':
 
-    image = 'paicoin_server:v2'
+    image = 'paicoin_repl_server:v2'
     cmd = 'paicoin-cli getbestblockhash'
     output = run_cmd(image, cmd)
     print(output)
