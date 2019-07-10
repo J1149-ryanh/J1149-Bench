@@ -9,7 +9,7 @@ cd "$J1149_BENCH"
 if [ ${1: -3} == ".py" ] && grep -q "docker" "$1"; then
     sudo "$py" "$@"
 # If it's run in debug mode and the ninth param is the python file
-elif [ ${9: -3} == ".py" ] && grep -q "docker" "$9"; then
+elif [[ $# -eq 9 ]]  && [ ${9: -3} == ".py" ] && grep -q "docker" "$9"; then
     sudo "$py" "$@"
 else
 	"$py" "$@"

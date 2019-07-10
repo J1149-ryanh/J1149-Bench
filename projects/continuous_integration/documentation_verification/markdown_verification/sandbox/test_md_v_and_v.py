@@ -5,7 +5,7 @@ import pytest
 def pytest_generate_tests(metafunc):
     results = []
     verification = md_v_and_v.Verification(image='paicoin_server:v2')
-    for result in verification.yield_results(r'/home/rxhernandez/PycharmProjects/j1149.github.io/_papi'):
+    for result in verification.yield_results(r'~/PycharmProjects/j1149.github.io/_papi'):
         results.append(result)
     metafunc.parametrize('result', results)
 

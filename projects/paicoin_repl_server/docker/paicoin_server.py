@@ -3,6 +3,7 @@ import subprocess
 import time
 
 from rpcauth import password_to_hmac, generate_salt
+from paicoin_sync import synchronize
 
 P_FNAME = 'paicoin.conf'
 
@@ -59,6 +60,7 @@ if __name__ == '__main__':
     # We tried to fix this once; it's time to give up.
     if not rpcauth_str_in_cfg():
         raise OSError("Couldn't add rpcauth_str to paicoin.conf")
-    print("Calling the shell!")    
-    #subprocess.call('sh', shell=True)
+    # make sure we're up to date before we serve up this container.
+    synchronize()
+
 

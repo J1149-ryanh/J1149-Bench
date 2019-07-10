@@ -29,8 +29,12 @@ ADD paicoin.conf /root/.paicoin
 ADD paicoin.conf /root/.paicoin/testnet
 ADD paicoin.conf /root/.paicoin/regtest
 
+#RUN pwd
 ADD paicoin_server.py /home/scripts
 ADD rpcauth.py /home/scripts
+ADD paicoin_sync.py /home/scripts
 WORKDIR /home/scripts
+# Make sure both the mainnet and testnet are synced up before we hand it off.
+RUN python3 paicoin_sync.py
 CMD python3 paicoin_server.py
 EXPOSE 8080 8009
