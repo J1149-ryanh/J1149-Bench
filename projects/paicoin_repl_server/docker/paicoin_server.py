@@ -4,6 +4,7 @@ import time
 
 from rpcauth import password_to_hmac, generate_salt
 from paicoin_sync import synchronize
+from paicoin_repl import run
 
 P_FNAME = 'paicoin.conf'
 
@@ -14,6 +15,7 @@ PAICOIN_CFG = os.path.join(PAICOIN_DIR, P_FNAME)
 TESTNET_PAICOIN_CFG = os.path.join(PAICOIN_DIR, 'testnet', P_FNAME)
 REGTEST_PAICOIN_CFG = os.path.join(PAICOIN_DIR, 'regtest', P_FNAME)
 RPC_AUTH_PREFIX  = 'rpcauth'
+
 
 def rpcauth_str_in_cfg():
     '''
@@ -35,6 +37,7 @@ def rpcauth_str_in_cfg():
                 print("rpcauth line found : %s"%line)
                 return True
     return False
+
 
 def add_rpcauth(path, rpcauth_str):
     print('Adding rpcauth string to: %s'%path)
@@ -62,5 +65,4 @@ if __name__ == '__main__':
         raise OSError("Couldn't add rpcauth_str to paicoin.conf")
     # make sure we're up to date before we serve up this container.
     synchronize()
-
-
+    run()

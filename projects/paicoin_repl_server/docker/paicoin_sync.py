@@ -29,7 +29,7 @@ def sync_fin(network):
                                     perc_blocks_retrieved*100,
                                     verf_prog*100,
                                     j["bestblockhash"]))
-    return not (perc_blocks_retrieved < 1) and not (verf_prog < 1)
+    return not (perc_blocks_retrieved < 1) and not (verf_prog < .99)
 
 
 def synchronize():
