@@ -37,7 +37,7 @@ def sanitize(cmd):
 
 if __name__ == '__main__':
 
-    image = 'paicoin_repl_server:v2'
-    cmd = 'paicoin-cli getbestblockhash'
+    image = 'paicoin_repl_server:v4'
+    cmd = 'paicoin-cli -tesnet getbestblockhash'
     output = run_cmd(image, cmd)
     print(output)

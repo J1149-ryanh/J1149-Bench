@@ -1,0 +1,13 @@
+{
+  "name": "docker_host",
+  "version": "1.0.0",
+  "dependencies": {
+    "fetch": "github/fetch#^2.0.3",
+    "jquery": "jquery/jquery-dist#^3.2.1",
+    "promise-polyfill": "taylorhakes/promise-polyfill#^6.0.2",
+    "xterm.js": "sourcelair/xterm.js#^2.7.0"
+  },
+  "engines": {
+    "yarn": ">= 1.0.0"
+  }
+}

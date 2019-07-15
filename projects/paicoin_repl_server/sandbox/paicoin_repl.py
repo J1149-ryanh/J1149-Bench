@@ -1,9 +1,12 @@
+#!/usr/bin/env python
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.test_node import TestNode
 
 from enum import Enum, unique, auto
 from overrides import overrides
 import os
+import psutil
+import shlex, subprocess
 import sys
 
 
@@ -92,6 +95,20 @@ NETS = {MAINNET: mainnet_testnode, TESTNET: testnet_testnode,
         REGTEST: regtest_testnode}
 
 
+def is_paicoind_running(net=None):
+    for pid in psutil.pids():
+        p = psutil.Process(pid)
+        cmdline = p.cmdline()
+
+        if len(cmdline) < 1:
+            continue
+        if cmdline[0] == D and net == MAINNET and len(cmdline) < 2 and p.is_running():
+            return True
+        elif cmdline[0] == D and len(cmdline) > 1 and net == cmdline[1] and p.is_running():
+            return True
+    return False
+
+
 def rm_whitespace(fn):
     """Remove trailing whitespace from the command before it reaches the
     sanitization functions."""
@@ -125,12 +142,31 @@ def sanitize_d(cmd):
     if len(cmd) == 0 and MAINNET:
         return None, Status.SUCCESS
 
-    test_node = get_testnode(cmd)
-
+    net = get_net(cmd)
+    # TODO remove hack
+    cmd = 'paicoind ' + net
+    if not is_paicoind_running(net):
+        print("Running cmd: %s" % cmd)
+        subprocess.Popen(args=['paicoind', net])
+        return None, Status.SUCCESS
+    else:
+        print('%s is already running!' % cmd)
+        return None, Status.SUCCESS
     param = cmd.split(' ')[0]
     if len(param.split()) > 0:
         raise ParameterNotSupported("%s: parameter is not yet"
                                     " supported." % param)
+
+@rm_whitespace
+def get_net(cmd):
+    for el in NETS:
+        if cmd.startswith(el):
+            return el
+    # if it's an empty string it is obviously the mainnet
+    if len(cmd) == 0:
+        return MAINNET
+    raise NetworkNotSupported('%s: network is not supported.'%cmd)
+
 
 
 @rm_whitespace
@@ -194,6 +230,7 @@ def read():
         raise ReplError("%s: Something went wrong." % cmd)
     return cli_node
 
+
 def evaluate(cli_node):
     output = cli_node()
     return output
@@ -209,9 +246,14 @@ def run():
     sys.stdout.flush()
     sys.stderr.flush()
     print('\n' * 3)
+    i = 0
     while True:
         try:
+            i+= 1
+            print(i)
             cli_node = read()
+            if cli_node is None:
+                continue
             output = evaluate(cli_node)
             prnt(output)
         except Exception as e:
