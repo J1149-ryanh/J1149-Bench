@@ -51,14 +51,6 @@ class Status(Enum):
 D = 'paicoind'
 CLI = 'paicoin-cli'
 
-# TODO: look into whether allowing users to access the mainnet is a worthy idea;
-#  maybe our paicoin repl server could be monetized by storing their wallets in
-#  a docker containe??? Maybe that's ridiculous; I'm way too tired to analyze
-#  this properly.
-import warnings
-
-warnings.warn("Mainnet is avaiable.")
-
 # where paicoin.conf exists
 MAINNET_DATA_DIR = os.path.expanduser('~/.paicoin')
 TESTNET_DATA_DIR = os.path.expanduser('~/.paicoin/testnet')
@@ -102,9 +94,11 @@ def is_paicoind_running(net=None):
 
         if len(cmdline) < 1:
             continue
-        if cmdline[0] == D and net == MAINNET and len(cmdline) < 2 and p.is_running():
+        if cmdline[0] == D and net == MAINNET and len(
+                cmdline) < 2 and p.is_running():
             return True
-        elif cmdline[0] == D and len(cmdline) > 1 and net == cmdline[1] and p.is_running():
+        elif cmdline[0] == D and len(cmdline) > 1 and net == cmdline[1] \
+                and p.is_running():
             return True
     return False
 
@@ -143,19 +137,25 @@ def sanitize_d(cmd):
         return None, Status.SUCCESS
 
     net = get_net(cmd)
-    # TODO remove hack
-    cmd = 'paicoind ' + net
+    test_node = get_testnode(cmd)
+
     if not is_paicoind_running(net):
-        print("Running cmd: %s" % cmd)
-        subprocess.Popen(args=['paicoind', net])
+        # so this is an odd one... If you look at test_node in bitcoin's master
+        # branch (July 14, 2019) TestNode().start() takes in an argument:
+        # extra_args, which is concatenated with another list in the TestNode
+        # instance. Since subprocess.Popen expects a list of strings, this
+        # should be an empty list. However, if you look at
+        # feature_block.py extra_args is a list with an empty list inside of
+        # it, so something seems to be wrong with their implementation or maybe
+        # I'm using a newer version of Python than they are.
+        extra_args = []
+        test_node.start(extra_args=extra_args, stdout=sys.stdout,
+                        stderr=sys.stderr)
         return None, Status.SUCCESS
     else:
         print('%s is already running!' % cmd)
         return None, Status.SUCCESS
-    param = cmd.split(' ')[0]
-    if len(param.split()) > 0:
-        raise ParameterNotSupported("%s: parameter is not yet"
-                                    " supported." % param)
+
 
 @rm_whitespace
 def get_net(cmd):
@@ -165,8 +165,7 @@ def get_net(cmd):
     # if it's an empty string it is obviously the mainnet
     if len(cmd) == 0:
         return MAINNET
-    raise NetworkNotSupported('%s: network is not supported.'%cmd)
-
+    raise NetworkNotSupported('%s: network is not supported.' % cmd)
 
 
 @rm_whitespace
@@ -207,7 +206,6 @@ def sanitize_cli(cmd):
 
 @rm_whitespace
 def sanitize_cli_cmd(cli_cmd, test_node):
-    print('Sanitizing %s' % cli_cmd)
     cli = getattr(test_node, cli_cmd, None)
     if cli is not None:
         try:
@@ -220,12 +218,11 @@ def sanitize_cli_cmd(cli_cmd, test_node):
 
 
 def read():
-
     cmd = input(">> ")
 
     cli_node, status = sanitize(cmd)
     if status == Status.SUCCESS:
-        print("%s: passes" % cmd)
+        pass
     else:
         raise ReplError("%s: Something went wrong." % cmd)
     return cli_node
@@ -240,24 +237,30 @@ def prnt(output):
     print(output)
 
 
+def shutdown():
+    for el in NETS:
+        test_node = NETS[el]
+        test_node.stop_node()
+
+
 def run():
+    print("Welcome to Paicoin's REPL!")
     # Make sure everything else that needed to print has already printed before
     # we enter the repl
     sys.stdout.flush()
     sys.stderr.flush()
-    print('\n' * 3)
-    i = 0
     while True:
         try:
-            i+= 1
-            print(i)
             cli_node = read()
             if cli_node is None:
                 continue
             output = evaluate(cli_node)
             prnt(output)
         except Exception as e:
-            print(*e.args)
+            import traceback
+            print(traceback.format_exc())
+
+    shutdown()
 
 
 run()
