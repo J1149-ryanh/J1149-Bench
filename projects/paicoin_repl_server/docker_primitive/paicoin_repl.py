@@ -94,10 +94,10 @@ def is_paicoind_running(net=None):
 
         if len(cmdline) < 1:
             continue
-        if cmdline[0] == D and net == MAINNET and len(
+        if D in cmdline[0]  and net == MAINNET and len(
                 cmdline) < 2 and p.is_running():
             return True
-        elif cmdline[0] == D and len(cmdline) > 1 and net == cmdline[1] \
+        elif D in cmdline[0] and len(cmdline) > 1 and net.replace('-','') in cmdline[1] \
                 and p.is_running():
             return True
     return False
@@ -200,6 +200,10 @@ def sanitize_cli(cmd):
     #  insecure...)
     net = cmd.split(' ')[0]
     test_node = get_testnode(net)
+    if not is_paicoind_running(net):
+        print('paicoind %s is not running' % net)
+        return None, Status.SUCCESS
+
     cli_cmd = ' '.join(cmd.split(' ')[1:])
     return sanitize_cli_cmd(cli_cmd, test_node)
 

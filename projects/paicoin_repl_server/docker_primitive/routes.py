@@ -15,7 +15,7 @@ WS = [
 
 # Define new web rendering route associations
 WEB = [
-    (r'/paicoin-repl', web.MainHandler)
+    (r'/', web.MainHandler)
 ]
 
 ROUTES = REST + WS + WEB

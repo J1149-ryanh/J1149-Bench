@@ -10,7 +10,7 @@ def start_processes():
     # TODO: on a slower machine this may not be nearly enough time. It would
     #  probably be prudent to wrap sync_fin with an exception handler and error
     #  out when way too much time has passed.
-    time.sleep(2)
+    time.sleep(10)
 
 
 def sync_fin(network):
