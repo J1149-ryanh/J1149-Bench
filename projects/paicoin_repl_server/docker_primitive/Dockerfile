@@ -25,10 +25,10 @@ RUN sh -e miniconda_install.sh
 ENV PATH="/root/miniconda3/bin:${PATH}"
 
 # Add file needed to create username/password for paicoin RPC
-RUN ["/bin/bash", "-c", " mkdir -p /root/.paicoin/{testnet,regtest}"]
-ADD paicoin.conf /root/.paicoin
-ADD paicoin.conf /root/.paicoin/testnet
-ADD paicoin.conf /root/.paicoin/regtest
+RUN ["/bin/bash", "-c", " mkdir -p /root/.paicoin/{testnet,regtest,testnet3}"]
+ADD paicoin.conf /root/.paicoin/paicoin.conf
+ADD paicoin-testnet.conf /root/.paicoin/testnet/paicoin.conf
+ADD paicoin-regtest.conf /root/.paicoin/regtest/paicoin.conf
 
 RUN pwd
 ADD paicoin_server.py /home/scripts
