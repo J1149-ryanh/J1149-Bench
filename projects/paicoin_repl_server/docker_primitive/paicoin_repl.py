@@ -6,6 +6,7 @@ from enum import Enum, unique, auto
 from overrides import overrides
 import os
 import psutil
+import socket
 import shlex, subprocess
 import sys
 
@@ -47,6 +48,13 @@ class Status(Enum):
     SUCCESS = auto()
     FAILURE = auto()
 
+
+def get_free_tcp_port():
+    tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp.bind(('', 0))
+    addr, port = tcp.getsockname()
+    tcp.close()
+    return port
 
 D = 'paicoind'
 CLI = 'paicoin-cli'
@@ -148,7 +156,9 @@ def sanitize_d(cmd):
         # feature_block.py extra_args is a list with an empty list inside of
         # it, so something seems to be wrong with their implementation or maybe
         # I'm using a newer version of Python than they are.
-        extra_args = []
+        # TODO this has a race condition! if two users grab the same port at the
+        #  same time, one user will get an error.
+        extra_args = ['-port=%s' % str(get_free_tcp_port())]
         test_node.start(extra_args=extra_args, stdout=sys.stdout,
                         stderr=sys.stderr)
         return None, Status.SUCCESS
