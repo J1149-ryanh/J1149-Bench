@@ -40,17 +40,27 @@ class TermManager(TermManagerBase):
 
     def __init__(self, shell_command, **kwargs):
         """Create a new terminal handler instance."""
+        print('__init__', flush=True)
         super(TermManager, self).__init__(shell_command, **kwargs)
+        self.base_shell_command = tuple(shell_command)
         self.consoles = {}
+        self.num_terminals = 0
 
     def new_terminal(self, **options):
         """Make a new terminal, return a :class:`PtyReader` instance."""
+        print('new_terminal', flush=True)
+        self.num_terminals += 1
+        self.shell_command = list(self.base_shell_command)
+        self.shell_command.append( '-n')
+        self.shell_command.append(str(self.num_terminals))
         tty = super(TermManager, self).new_terminal(**options)
         return PtyReader(tty.ptyproc)
 
     @tornado.gen.coroutine
     def client_disconnected(self, pid, socket):
         """Send terminal SIGHUP when client disconnects."""
+        
+        print('client_disconnected', flush=True)
         self.log.info("Websocket closed, sending SIGHUP to terminal.")
         term = self.consoles[pid]
         term.clients.remove(socket)
@@ -67,6 +77,7 @@ class TermManager(TermManagerBase):
     @tornado.gen.coroutine
     def create_term(self, rows, cols, cwd=None):
         """Create a new virtual terminal."""
+        print('create_term', flush=True)
         pid = hashlib.md5(str(time.time()).encode('utf-8')).hexdigest()[0:6]
         pty = self.new_terminal(cwd=cwd, height=rows, width=cols)
         pty.resize_to_smallest(rows, cols)
@@ -76,6 +87,7 @@ class TermManager(TermManagerBase):
     @tornado.gen.coroutine
     def start_term(self, pid, socket):
         """Start reading a virtual terminal."""
+        print('start_term', flush=True)
         term = self.consoles[pid]
         self.start_reading(term)
         term.clients.append(socket)
@@ -83,6 +95,7 @@ class TermManager(TermManagerBase):
     @tornado.gen.coroutine
     def execute(self, pid, cmd):
         """Write characters to terminal."""
+        print('execute', flush=True)
         term = self.consoles[pid]
         term.ptyproc.write(cmd)
 

@@ -627,7 +627,8 @@ class TestNodeCLI():
                              cli_stderr)
             if match:
                 code, message = match.groups()
-                raise JSONRPCException(dict(code=int(code), message=message))
+                #raise JSONRPCException(dict(code=int(code), message=message))
+                return cli_stdout
             # Ignore cli_stdout, raise with cli_stderr
             raise subprocess.CalledProcessError(returncode, self.binary,
                                                 output=cli_stderr)

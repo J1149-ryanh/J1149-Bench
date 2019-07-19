@@ -24,7 +24,7 @@ def create_app(shell, close_future=None):
                               debug=True,
                               serve_traceback=True,
                               autoreload=True, **settings)
-    application.term_manager = TermManager([shell])
+    application.term_manager = TermManager(['python', shell])
     return application
 
 
@@ -46,4 +46,4 @@ def main(port, shell):
 
 
 if __name__ == '__main__':
-    main(8888, 'paicoin_repl.py')
+    main(8888, '/home/scripts/paicoin_repl.py')

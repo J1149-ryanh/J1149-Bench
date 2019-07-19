@@ -7,8 +7,17 @@ from overrides import overrides
 import os
 import psutil
 import socket
+import shutil
 import shlex, subprocess
 import sys
+
+
+import argparse
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-n', '--num_terminals', help='Number of terminals')
+args = parser.parse_args()
 
 
 class ReplError(Exception):
@@ -59,34 +68,50 @@ def get_free_tcp_port():
 D = 'paicoind'
 CLI = 'paicoin-cli'
 
+paicoin_copy ='~/.paicoin_copy%s'%str(args.num_terminals) 
 # where paicoin.conf exists
-MAINNET_DATA_DIR = os.path.expanduser('~/.paicoin')
-TESTNET_DATA_DIR = os.path.expanduser('~/.paicoin/testnet')
-REGTEST_DATA_DIR = os.path.expanduser('~/.paicoin/regtest')
+MAINNET_DATA_DIR = os.path.expanduser(paicoin_copy)
+TESTNET_DATA_DIR = os.path.join(MAINNET_DATA_DIR,'testnet')
+REGTEST_DATA_DIR = os.path.join(MAINNET_DATA_DIR, 'regtest')
+
+os.makedirs(MAINNET_DATA_DIR)
+os.makedirs(TESTNET_DATA_DIR)
+os.makedirs(REGTEST_DATA_DIR)
+
+shutil.copy2(os.path.expanduser(r'~/.paicoin/paicoin.conf'), MAINNET_DATA_DIR)
+shutil.copy2(os.path.expanduser(r'~/.paicoin/testnet/paicoin.conf'), TESTNET_DATA_DIR)
+shutil.copy2(os.path.expanduser(r'~/.paicoin/regtest/paicoin.conf'), REGTEST_DATA_DIR)
+
+
 COV_DIR = os.path.expanduser('~/tmp/paicoin/functional/cov_dir')
 
 if not os.path.exists(COV_DIR):
     os.makedirs(COV_DIR)
+
+port = str(get_free_tcp_port())
+rpcport = str(get_free_tcp_port())
+
+extra_args = ['-port=%s' % port,'-rpcport=%s' % rpcport]
 
 test_node_idx = 0
 mainnet_testnode = TestNode(i=test_node_idx, datadir=MAINNET_DATA_DIR,
                             rpchost='localhost', timewait=60,
                             bitcoind='paicoind', bitcoin_cli='paicoin-cli',
                             coverage_dir=COV_DIR, cwd=MAINNET_DATA_DIR,
-                            use_cli=True)
+                            use_cli=True, extra_args=extra_args )
 
 test_node_idx += 1
 testnet_testnode = TestNode(i=test_node_idx, datadir=TESTNET_DATA_DIR,
                             rpchost='localhost', timewait=60,
                             bitcoind='paicoind', bitcoin_cli='paicoin-cli',
                             coverage_dir=COV_DIR,
-                            cwd=TESTNET_DATA_DIR, use_cli=True)
+                            cwd=TESTNET_DATA_DIR, use_cli=True, extra_args=extra_args )
 test_node_idx += 1
 regtest_testnode = TestNode(i=test_node_idx, datadir=REGTEST_DATA_DIR,
                             rpchost='localhost', timewait=60,
                             bitcoind='paicoind',
                             bitcoin_cli='paicoin-cli', coverage_dir=COV_DIR,
-                            cwd=REGTEST_DATA_DIR, use_cli=True)
+                            cwd=REGTEST_DATA_DIR, use_cli=True,extra_args=extra_args  )
 
 MAINNET = '-mainnet'
 TESTNET = '-testnet'
@@ -94,20 +119,32 @@ REGTEST = '-regtest'
 NETS = {MAINNET: mainnet_testnode, TESTNET: testnet_testnode,
         REGTEST: regtest_testnode}
 
+DATA_DIRS = {MAINNET: MAINNET_DATA_DIR, TESTNET: TESTNET_DATA_DIR, REGTEST: REGTEST_DATA_DIR}
+
+for net in DATA_DIRS:
+    data_dir = DATA_DIRS[net]
+    path = os.path.join(data_dir, 'paicoin.conf')
+    with open(path, 'a') as f:
+        for arg in extra_args:
+            f.write('\n'+arg.replace('-','')+'\n')
 
 def is_paicoind_running(net=None):
     for pid in psutil.pids():
         p = psutil.Process(pid)
         cmdline = p.cmdline()
 
-        if len(cmdline) < 1:
+        if len(cmdline) < 2:
             continue
-        if D in cmdline[0]  and net == MAINNET and len(
-                cmdline) < 2 and p.is_running():
+        data_dir_cmd_line = cmdline[1]
+        data_dir = data_dir_cmd_line.split('=')[-1]
+        is_same_data_dir = False
+        for known_net in DATA_DIRS:
+            if known_net == net and data_dir == DATA_DIRS[known_net]:
+                is_same_data_dir = True
+
+        if D in cmdline[0] and is_same_data_dir and p.is_running():
             return True
-        elif D in cmdline[0] and len(cmdline) > 1 and net.replace('-','') in cmdline[1] \
-                and p.is_running():
-            return True
+
     return False
 
 
@@ -158,8 +195,7 @@ def sanitize_d(cmd):
         # I'm using a newer version of Python than they are.
         # TODO this has a race condition! if two users grab the same port at the
         #  same time, one user will get an error.
-        extra_args = ['-port=%s' % str(get_free_tcp_port())]
-        test_node.start(extra_args=extra_args, stdout=sys.stdout,
+        test_node.start(stdout=sys.stdout,
                         stderr=sys.stderr)
         return None, Status.SUCCESS
     else:
@@ -255,6 +291,7 @@ def shutdown():
     for el in NETS:
         test_node = NETS[el]
         test_node.stop_node()
+    shutil.rmtree(paicoin_copy)
 
 
 def run():
@@ -275,6 +312,5 @@ def run():
             print(traceback.format_exc())
 
     shutdown()
-
 
 run()

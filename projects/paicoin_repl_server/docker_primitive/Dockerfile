@@ -57,12 +57,6 @@ RUN sh -e yarn_install.sh
 
 # App
 WORKDIR /home/app
-ADD http_server.py /home/app
-ADD routes.py /home/app
-ADD term_manager.py /home/app
-ADD term_rest_handler.py /home/app
-ADD term_web_handler.py /home/app
-ADD term_websocket_handler.py /home/app
 ADD .yarnrc /home/app
 ADD yarn.lock /home/app
 ADD package.json /home/app
@@ -74,6 +68,12 @@ RUN  conda install -c anaconda psutil
 RUN conda install -c anaconda tornado
 RUN conda install -c anaconda terminado
 
+ADD http_server.py /home/app
+ADD routes.py /home/app
+ADD term_manager.py /home/app
+ADD term_rest_handler.py /home/app
+ADD term_web_handler.py /home/app
+ADD term_websocket_handler.py /home/app
 
 ADD paicoin_repl.py /home/scripts
 RUN chmod +x /home/scripts/paicoin_repl.py
