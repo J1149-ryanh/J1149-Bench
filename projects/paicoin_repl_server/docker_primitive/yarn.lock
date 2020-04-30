@@ -6,9 +6,10 @@ fetch@github/fetch#^2.0.3:
   version "2.0.4"
   resolved "https://codeload.github.com/github/fetch/tar.gz/cbb313bf09512efda9444e40fe9e8ac432ac1108"
 
-jquery@jquery/jquery-dist#^3.2.1:
-  version "3.3.1"
-  resolved "https://codeload.github.com/jquery/jquery-dist/tar.gz/9e8ec3d10fad04748176144f108d7355662ae75e"
+jquery@jquery/jquery-dist#^3.5.0:
+  version "3.5.0"
+  uid "1fd78cd729742aa26f64783f9188e169e41f194e"
+  resolved "https://codeload.github.com/jquery/jquery-dist/tar.gz/1fd78cd729742aa26f64783f9188e169e41f194e"
 
 promise-polyfill@taylorhakes/promise-polyfill#^6.0.2:
   version "6.0.2"
